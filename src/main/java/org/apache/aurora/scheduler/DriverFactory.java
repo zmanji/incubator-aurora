@@ -163,6 +163,8 @@ public interface DriverFactory extends Function<String, SchedulerDriver> {
         LOG.info(String.format("Connecting to master using authentication (principal: %s).",
             properties.get(PRINCIPAL_KEY)));
 
+        frameworkInfo.setPrincipal(properties.getProperty(PRINCIPAL_KEY));
+
         Credential credential = Credential.newBuilder()
             .setPrincipal(properties.getProperty(PRINCIPAL_KEY))
             .setSecret(ByteString.copyFromUtf8(properties.getProperty(SECRET_KEY)))
