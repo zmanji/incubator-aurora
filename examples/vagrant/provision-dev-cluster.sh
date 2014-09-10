@@ -86,6 +86,20 @@ Host $(hostname)
 EOF
 }
 
+function install_credential_files {
+  # Mesos credential file:
+  mkdir -p /etc/mesos-master
+  cat > /etc/mesos-master/credentials <<EOF
+aurora-scheduler passw0rd
+EOF
+
+  mkdir -p /etc/aurora/
+  cat > /etc/aurora/credentials.properties <<EOF
+aurora_authentication_principal = aurora-scheduler
+aurora_authentication_secret = passw0rd
+EOF
+}
+
 function start_services {
   start zookeeper
   start mesos-master
@@ -109,5 +123,6 @@ install_mesos
 prepare_extras
 install_cluster_config
 install_ssh_config
+install_credential_files
 start_services
 su vagrant -c "aurorabuild client client2 admin_client executor observer scheduler"
