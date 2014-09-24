@@ -12,6 +12,7 @@
 # limitations under the License.
 #
 
+import json
 import posixpath
 import socket
 import threading
@@ -19,7 +20,9 @@ import time
 from abc import abstractmethod
 
 from kazoo.client import KazooClient
+from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
+from mesos.interface import mesos_pb2
 from twitter.common import log
 from twitter.common.concurrent.deferred import defer
 from twitter.common.exceptions import ExceptionalThread
@@ -27,7 +30,11 @@ from twitter.common.metrics import LambdaGauge, Observable
 from twitter.common.quantity import Amount, Time
 from twitter.common.zookeeper.serverset import Endpoint, ServerSet
 
-from apache.aurora.executor.common.status_checker import StatusChecker, StatusCheckerProvider
+from apache.aurora.executor.common.status_checker import (
+    StatusChecker,
+    StatusCheckerProvider,
+    StatusResult
+)
 from apache.aurora.executor.common.task_info import (
     mesos_task_instance_from_assigned_task,
     resolve_ports
@@ -71,10 +78,12 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
         portmap,
         mesos_task.announce().primary_port().get())
 
-    serverset = self.make_serverset(assigned_task)
-
-    return AnnouncerChecker(
+    try:
+      serverset = self.make_serverset(assigned_task)
+      return AnnouncerChecker(
         serverset, endpoint, additional=additional, shard=assigned_task.instanceId, name=self.name)
+    except TimeoutError:
+      return UnHealthyChecker()
 
 
 class DefaultAnnouncerCheckerProvider(AnnouncerCheckerProvider):
@@ -97,7 +106,14 @@ class DefaultAnnouncerCheckerProvider(AnnouncerCheckerProvider):
         assigned_task.task.jobName)
     path = posixpath.join(self.__root, role, environment, name)
     client = KazooClient(self.__ensemble, connection_retry=self.DEFAULT_RETRY_POLICY)
-    client.start()
+
+    executor_data = json.loads(assigned_task.task.executorConfig.data)
+    initial_interval = executor_data["health_check_config"]["initial_interval_secs"]
+    interval = executor_data["health_check_config"]["interval_secs"]
+    consecutive_failures = executor_data["health_check_config"]["max_consecutive_failures"]
+    timeout_secs = initial_interval + (consecutive_failures * interval)
+
+    client.start(timeout=timeout_secs)
     return ServerSet(client, path)
 
 
@@ -222,3 +238,9 @@ class AnnouncerChecker(StatusChecker):
 
   def stop(self):
     defer(self.__announcer.stop)
+
+
+class UnHealthyChecker(StatusChecker):
+  @property
+  def status(self):
+    return StatusResult("Creating Announcer Serverset timed out.", mesos_pb2.TASK_FAILED)
