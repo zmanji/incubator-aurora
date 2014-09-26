@@ -33,7 +33,7 @@ from twitter.common.zookeeper.serverset import Endpoint, ServerSet
 from apache.aurora.executor.common.status_checker import (
     StatusChecker,
     StatusCheckerProvider,
-    StatusResult
+    StatusResult,
 )
 from apache.aurora.executor.common.task_info import (
     mesos_task_instance_from_assigned_task,
@@ -82,7 +82,8 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
       serverset = self.make_serverset(assigned_task)
       return AnnouncerChecker(
         serverset, endpoint, additional=additional, shard=assigned_task.instanceId, name=self.name)
-    except TimeoutError:
+    except TimeoutError as e:
+      log.error(e)
       return UnHealthyChecker()
 
 
