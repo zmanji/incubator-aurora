@@ -83,7 +83,7 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
       return AnnouncerChecker(
         serverset, endpoint, additional=additional, shard=assigned_task.instanceId, name=self.name)
     except TimeoutError as e:
-      log.error(e)
+      log.error("Initial connection to ZooKeeper timed out: %s" % e)
       return UnHealthyChecker()
 
 
