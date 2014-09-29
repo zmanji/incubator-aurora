@@ -122,7 +122,7 @@ class AuroraExecutor(ExecutorBase, Observable):
       self._start_status_manager(driver, assigned_task)
     except Exception:
       log.error(traceback.format_exc())
-      self._die(driver, mesos_pb2.TASK_FAILED, "TASK_FAILED: Internal error")
+      self._die(driver, mesos_pb2.TASK_FAILED, "Internal error")
       return
 
   def _initialize_sandbox(self, driver, assigned_task):
