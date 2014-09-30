@@ -18,7 +18,6 @@ import mock
 import pytest
 from kazoo.client import KazooClient
 from kazoo.exceptions import KazooException
-from kazoo.handlers.threading import TimeoutError
 from twitter.common.quantity import Amount, Time
 from twitter.common.testing.clock import ThreadedClock
 from twitter.common.zookeeper.serverset import Endpoint, ServerSet
