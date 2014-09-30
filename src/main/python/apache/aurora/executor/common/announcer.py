@@ -107,11 +107,12 @@ class DefaultAnnouncerCheckerProvider(AnnouncerCheckerProvider):
         assigned_task.task.jobName)
     path = posixpath.join(self.__root, role, environment, name)
     client = KazooClient(self.__ensemble, connection_retry=self.DEFAULT_RETRY_POLICY)
+    mesos_task = mesos_task_instance_from_assigned_task(assigned_task)
 
-    executor_data = json.loads(assigned_task.task.executorConfig.data)
-    initial_interval = executor_data["health_check_config"]["initial_interval_secs"]
-    interval = executor_data["health_check_config"]["interval_secs"]
-    consecutive_failures = executor_data["health_check_config"]["max_consecutive_failures"]
+
+    initial_interval = mesos_task.health_check_config().initial_interval_secs().get()
+    interval = mesos_task.health_check_config().interval_secs().get()
+    consecutive_failures = mesos_task.health_check_config().max_consecutive_failures().get()
     timeout_secs = initial_interval + (consecutive_failures * interval)
 
     client.start(timeout=timeout_secs)
