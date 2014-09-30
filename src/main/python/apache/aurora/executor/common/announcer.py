@@ -251,4 +251,3 @@ class AnnouncerChecker(StatusChecker):
   def stop(self):
     defer(self.__announcer.stop)
 
-
