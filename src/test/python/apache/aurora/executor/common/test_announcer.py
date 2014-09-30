@@ -234,20 +234,6 @@ def test_make_empty_endpoints():
   assert additional == {}
 
 
-# @mock.patch('apache.aurora.executor.common.announcer.KazooClient')
-# def test_default_announcer_timeout(mock_client_provider):
-#   mock_client = mock.MagicMock(spec=KazooClient)
-#   mock_client_provider.return_value = mock_client
-#   mock_client.connected = None
-
-#   dap = DefaultAnnouncerCheckerProvider('zookeeper.example.com', root='/aurora')
-#   job = make_job('aurora', 'prod', 'proxy', 'primary', portmap={'http': 80, 'admin': 'primary'})
-#   assigned_task = make_assigned_task(job, assigned_ports={'primary': 12345})
-#   checker = dap.from_assigned_task(assigned_task, None)
-
-#   assert checker.status is not None
-
-
 @mock.patch('apache.aurora.executor.common.announcer.ServerSet')
 @mock.patch('apache.aurora.executor.common.announcer.KazooClient')
 def test_default_announcer_provider(mock_client_provider, mock_serverset_provider):
