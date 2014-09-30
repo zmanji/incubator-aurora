@@ -20,7 +20,6 @@ import time
 from abc import abstractmethod
 
 from kazoo.client import KazooClient
-from kazoo.handlers.threading import TimeoutError
 from kazoo.retry import KazooRetry
 from mesos.interface import mesos_pb2
 from twitter.common import log
@@ -66,7 +65,7 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
     """Create a ZooKeeper which can be asyncronously started"""
 
   @abstractmethod
-  def make_serverset(self, assigned_task, client):
+  def make_zk_path(self, assigned_task):
     """Given an assigned task and a ZooKeeper client, return the serverset into which we should
     announce the task."""
 
@@ -83,22 +82,16 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
         portmap,
         mesos_task.announce().primary_port().get())
 
-    try:
-      client = self.make_zk_client()
+    client = self.make_zk_client()
+    path = self.make_zk_path(assigned_task)
 
-      initial_interval = mesos_task.health_check_config().initial_interval_secs().get()
-      interval = mesos_task.health_check_config().interval_secs().get()
-      consecutive_failures = mesos_task.health_check_config().max_consecutive_failures().get()
-      timeout_secs = initial_interval + (consecutive_failures * interval)
+    initial_interval = mesos_task.health_check_config().initial_interval_secs().get()
+    interval = mesos_task.health_check_config().interval_secs().get()
+    consecutive_failures = mesos_task.health_check_config().max_consecutive_failures().get()
+    timeout_secs = initial_interval + (consecutive_failures * interval)
 
-      client.start(timeout=timeout_secs)
-
-      serverset = self.make_serverset(assigned_task, client)
-      return AnnouncerChecker(
-        serverset, endpoint, additional=additional, shard=assigned_task.instanceId, name=self.name)
-    except TimeoutError as e:
-      log.error("Initial connection to ZooKeeper timed out: %s" % e)
-      return UnHealthyChecker()
+    return AnnouncerChecker(
+      client, path, timeout_secs, endpoint, additional=additional, shard=assigned_task.instanceId, name=self.name)
 
 
 class DefaultAnnouncerCheckerProvider(AnnouncerCheckerProvider):
@@ -117,15 +110,12 @@ class DefaultAnnouncerCheckerProvider(AnnouncerCheckerProvider):
   def make_zk_client(self):
     return KazooClient(self.__ensemble, connection_retry=self.DEFAULT_RETRY_POLICY)
 
-  def make_serverset(self, assigned_task, client):
+  def make_zk_path(self, assigned_task):
     role, environment, name = (
         assigned_task.task.owner.role,
         assigned_task.task.environment,
         assigned_task.task.jobName)
-    path = posixpath.join(self.__root, role, environment, name)
-    mesos_task = mesos_task_instance_from_assigned_task(assigned_task)
-
-    return ServerSet(client, path)
+    return posixpath.join(self.__root, role, environment, name)
 
 
 class ServerSetJoinThread(ExceptionalThread):
@@ -232,26 +222,33 @@ class Announcer(Observable):
 class AnnouncerChecker(StatusChecker):
   DEFAULT_NAME = 'announcer'
 
-  def __init__(self, serverset, endpoint, additional=None, shard=None, name=None):
-    self.__announcer = Announcer(serverset, endpoint, additional=additional, shard=shard)
+  def __init__(self, client, path, timeout_secs, endpoint, additional=None, shard=None, name=None):
+    self.__client = client
+    self.__connect_event = client.start_async()
+    self.__timeout_secs = timeout_secs
+    self.__announcer = Announcer(ServerSet(client, path), endpoint, additional=additional, shard=shard)
     self.__name = name or self.DEFAULT_NAME
+    self.__status = None
     self.metrics.register(LambdaGauge('disconnected_time', self.__announcer.disconnected_time))
 
   @property
   def status(self):
-    return None  # always return healthy
+    return self.__status
 
   def name(self):
     return self.__name
 
+  def __start(self):
+    self.__connect_event.wait(timeout=self.__timeout_secs)
+    if not self.__client.connected:
+      self.__status = StatusResult("Creating Announcer Serverset timed out.", mesos_pb2.TASK_FAILED)
+    else:
+      self.__announcer.start()
+
   def start(self):
-    self.__announcer.start()
+    defer(self.__start)
 
   def stop(self):
     defer(self.__announcer.stop)
 
 
-class UnHealthyChecker(StatusChecker):
-  @property
-  def status(self):
-    return StatusResult("Creating Announcer Serverset timed out.", mesos_pb2.TASK_FAILED)
