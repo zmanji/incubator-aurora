@@ -62,8 +62,13 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
     super(AnnouncerCheckerProvider, self).__init__()
 
   @abstractmethod
-  def make_serverset(self, assigned_task):
-    """Given an assigned task, return the serverset into which we should announce the task."""
+  def make_zk_client(self):
+    """Create a ZooKeeper which can be asyncronously started"""
+
+  @abstractmethod
+  def make_serverset(self, assigned_task, client):
+    """Given an assigned task and a ZooKeeper client, return the serverset into which we should
+    announce the task."""
 
   def from_assigned_task(self, assigned_task, _):
     mesos_task = mesos_task_instance_from_assigned_task(assigned_task)
@@ -79,7 +84,16 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
         mesos_task.announce().primary_port().get())
 
     try:
-      serverset = self.make_serverset(assigned_task)
+      client = self.make_zk_client()
+
+      initial_interval = mesos_task.health_check_config().initial_interval_secs().get()
+      interval = mesos_task.health_check_config().interval_secs().get()
+      consecutive_failures = mesos_task.health_check_config().max_consecutive_failures().get()
+      timeout_secs = initial_interval + (consecutive_failures * interval)
+
+      client.start(timeout=timeout_secs)
+
+      serverset = self.make_serverset(assigned_task, client)
       return AnnouncerChecker(
         serverset, endpoint, additional=additional, shard=assigned_task.instanceId, name=self.name)
     except TimeoutError as e:
@@ -100,22 +114,17 @@ class DefaultAnnouncerCheckerProvider(AnnouncerCheckerProvider):
     self.__root = root
     super(DefaultAnnouncerCheckerProvider, self).__init__()
 
-  def make_serverset(self, assigned_task):
+  def make_zk_client(self):
+    return KazooClient(self.__ensemble, connection_retry=self.DEFAULT_RETRY_POLICY)
+
+  def make_serverset(self, assigned_task, client):
     role, environment, name = (
         assigned_task.task.owner.role,
         assigned_task.task.environment,
         assigned_task.task.jobName)
     path = posixpath.join(self.__root, role, environment, name)
-    client = KazooClient(self.__ensemble, connection_retry=self.DEFAULT_RETRY_POLICY)
     mesos_task = mesos_task_instance_from_assigned_task(assigned_task)
 
-
-    initial_interval = mesos_task.health_check_config().initial_interval_secs().get()
-    interval = mesos_task.health_check_config().interval_secs().get()
-    consecutive_failures = mesos_task.health_check_config().max_consecutive_failures().get()
-    timeout_secs = initial_interval + (consecutive_failures * interval)
-
-    client.start(timeout=timeout_secs)
     return ServerSet(client, path)
 
 
