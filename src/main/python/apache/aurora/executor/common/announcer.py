@@ -62,12 +62,11 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
 
   @abstractmethod
   def make_zk_client(self):
-    """Create a ZooKeeper which can be asyncronously started"""
+    """Create a ZooKeeper client which can be asyncronously started"""
 
   @abstractmethod
   def make_zk_path(self, assigned_task):
-    """Given an assigned task and a ZooKeeper client, return the serverset into which we should
-    announce the task."""
+    """Given an assigned task return the path into where we should announce the task."""
 
   def from_assigned_task(self, assigned_task, _):
     mesos_task = mesos_task_instance_from_assigned_task(assigned_task)
