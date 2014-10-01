@@ -227,6 +227,7 @@ class AnnouncerChecker(StatusChecker):
     self.__announcer = Announcer(ServerSet(client, path), endpoint, additional=additional, shard=shard)
     self.__name = name or self.DEFAULT_NAME
     self.__status = None
+    self.start_event = threading.Event()
     self.metrics.register(LambdaGauge('disconnected_time', self.__announcer.disconnected_time))
 
   @property
@@ -242,6 +243,8 @@ class AnnouncerChecker(StatusChecker):
       self.__status = StatusResult("Creating Announcer Serverset timed out.", mesos_pb2.TASK_FAILED)
     else:
       self.__announcer.start()
+
+    self.start_event.set()
 
   def start(self):
     defer(self.__start)

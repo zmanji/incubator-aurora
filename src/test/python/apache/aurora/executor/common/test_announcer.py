@@ -235,6 +235,33 @@ def test_make_empty_endpoints():
 
 @mock.patch('apache.aurora.executor.common.announcer.ServerSet')
 @mock.patch('apache.aurora.executor.common.announcer.KazooClient')
+def test_announcer_provider_with_timeout(mock_client_provider, mock_serverset_provider):
+  mock_client = mock.MagicMock(spec=KazooClient)
+  mock_client_provider.return_value = mock_client
+  client_connect_event = threading.Event()
+  client_connect_event.set()
+  mock_client.start_async.return_value = client_connect_event
+
+  mock_serverset = mock.MagicMock(spec=ServerSet)
+  mock_serverset_provider.return_value = mock_serverset
+
+  dap = DefaultAnnouncerCheckerProvider('zookeeper.example.com', root='/aurora')
+  job = make_job('aurora', 'prod', 'proxy', 'primary', portmap={'http': 80, 'admin': 'primary'})
+  assigned_task = make_assigned_task(job, assigned_ports={'primary': 12345})
+  checker = dap.from_assigned_task(assigned_task, None)
+
+  mock_client.start_async.assert_called_once_with()
+  mock_serverset_provider.assert_called_once_with(mock_client, '/aurora/aurora/prod/proxy')
+
+  mock_client.connected = None # This is the timeout
+  checker.start()
+  checker.start_event.wait()
+
+  assert checker.status is not None
+
+
+@mock.patch('apache.aurora.executor.common.announcer.ServerSet')
+@mock.patch('apache.aurora.executor.common.announcer.KazooClient')
 def test_default_announcer_provider(mock_client_provider, mock_serverset_provider):
   mock_client = mock.MagicMock(spec=KazooClient)
   mock_client_provider.return_value = mock_client
