@@ -239,7 +239,6 @@ def test_announcer_provider_with_timeout(mock_client_provider, mock_serverset_pr
   mock_client = mock.MagicMock(spec=KazooClient)
   mock_client_provider.return_value = mock_client
   client_connect_event = threading.Event()
-  client_connect_event.set()
   mock_client.start_async.return_value = client_connect_event
 
   mock_serverset = mock.MagicMock(spec=ServerSet)
@@ -253,7 +252,9 @@ def test_announcer_provider_with_timeout(mock_client_provider, mock_serverset_pr
   mock_client.start_async.assert_called_once_with()
   mock_serverset_provider.assert_called_once_with(mock_client, '/aurora/aurora/prod/proxy')
 
-  mock_client.connected = None # This is the timeout
+  # NOTE: The Kazoo's client definition of connected is checking if the client event was set. We
+  # mimick that here as well.
+  mock_client.connected = client_connect_event.is_set()
   checker.start()
   checker.start_event.wait()
 

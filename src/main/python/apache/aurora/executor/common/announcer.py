@@ -239,7 +239,7 @@ class AnnouncerChecker(StatusChecker):
 
   def __start(self):
     self.__connect_event.wait(timeout=self.__timeout_secs)
-    if not self.__client.connected:
+    if not self.__connect_event.is_set():
       self.__status = StatusResult("Creating Announcer Serverset timed out.", mesos_pb2.TASK_FAILED)
     else:
       self.__announcer.start()
