@@ -21,7 +21,7 @@ date
 ./gradlew -Pq clean build --stacktrace
 
 # Run all Python tests
-./pants src/test/python:all -vxs
+./pants build --timeout=60 src/test/python:all -vxs
 
 # Run Python style checks
 ./build-support/python/isort-check
