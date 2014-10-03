@@ -29,6 +29,8 @@ from apache.aurora.executor.common.announcer import (
     ServerSetJoinThread
 )
 
+from apache.aurora.config.schema.base import HealthCheckConfig
+
 
 def test_serverset_join_thread():
   join = threading.Event()
@@ -246,15 +248,15 @@ def test_announcer_provider_with_timeout(mock_client_provider, mock_serverset_pr
 
   dap = DefaultAnnouncerCheckerProvider('zookeeper.example.com', root='/aurora')
   job = make_job('aurora', 'prod', 'proxy', 'primary', portmap={'http': 80, 'admin': 'primary'})
+
+  health_check_config = HealthCheckConfig(initial_interval_secs = 0.1, interval_secs = 0.1)
+  job = job(health_check_config = health_check_config)
   assigned_task = make_assigned_task(job, assigned_ports={'primary': 12345})
   checker = dap.from_assigned_task(assigned_task, None)
 
   mock_client.start_async.assert_called_once_with()
   mock_serverset_provider.assert_called_once_with(mock_client, '/aurora/aurora/prod/proxy')
 
-  # NOTE: The Kazoo's client definition of connected is checking if the client event was set. We
-  # mimick that here as well.
-  mock_client.connected = client_connect_event.is_set()
   checker.start()
   checker.start_event.wait()
 
