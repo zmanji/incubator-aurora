@@ -22,14 +22,13 @@ from twitter.common.quantity import Amount, Time
 from twitter.common.testing.clock import ThreadedClock
 from twitter.common.zookeeper.serverset import Endpoint, ServerSet
 
+from apache.aurora.config.schema.base import HealthCheckConfig
 from apache.aurora.executor.common.announcer import (
     Announcer,
     DefaultAnnouncerCheckerProvider,
     make_endpoints,
     ServerSetJoinThread
 )
-
-from apache.aurora.config.schema.base import HealthCheckConfig
 
 
 def test_serverset_join_thread():

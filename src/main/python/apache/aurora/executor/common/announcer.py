@@ -31,7 +31,7 @@ from twitter.common.zookeeper.serverset import Endpoint, ServerSet
 from apache.aurora.executor.common.status_checker import (
     StatusChecker,
     StatusCheckerProvider,
-    StatusResult,
+    StatusResult
 )
 from apache.aurora.executor.common.task_info import (
     mesos_task_instance_from_assigned_task,
@@ -251,4 +251,3 @@ class AnnouncerChecker(StatusChecker):
 
   def stop(self):
     defer(self.__announcer.stop)
-
