@@ -89,7 +89,8 @@ class AnnouncerCheckerProvider(StatusCheckerProvider):
     timeout_secs = initial_interval + (consecutive_failures * interval)
 
     return AnnouncerChecker(
-      client, path, timeout_secs, endpoint, additional=additional, shard=assigned_task.instanceId, name=self.name)
+      client, path, timeout_secs, endpoint, additional=additional, shard=assigned_task.instanceId,
+      name=self.name)
 
 
 class DefaultAnnouncerCheckerProvider(AnnouncerCheckerProvider):
@@ -224,7 +225,8 @@ class AnnouncerChecker(StatusChecker):
     self.__client = client
     self.__connect_event = client.start_async()
     self.__timeout_secs = timeout_secs
-    self.__announcer = Announcer(ServerSet(client, path), endpoint, additional=additional, shard=shard)
+    self.__announcer = Announcer(ServerSet(client, path), endpoint, additional=additional,
+        shard=shard)
     self.__name = name or self.DEFAULT_NAME
     self.__status = None
     self.start_event = threading.Event()

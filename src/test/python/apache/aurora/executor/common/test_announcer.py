@@ -248,8 +248,8 @@ def test_announcer_provider_with_timeout(mock_client_provider, mock_serverset_pr
   dap = DefaultAnnouncerCheckerProvider('zookeeper.example.com', root='/aurora')
   job = make_job('aurora', 'prod', 'proxy', 'primary', portmap={'http': 80, 'admin': 'primary'})
 
-  health_check_config = HealthCheckConfig(initial_interval_secs = 0.1, interval_secs = 0.1)
-  job = job(health_check_config = health_check_config)
+  health_check_config = HealthCheckConfig(initial_interval_secs=0.1, interval_secs=0.1)
+  job = job(health_check_config=health_check_config)
   assigned_task = make_assigned_task(job, assigned_ports={'primary': 12345})
   checker = dap.from_assigned_task(assigned_task, None)
 
