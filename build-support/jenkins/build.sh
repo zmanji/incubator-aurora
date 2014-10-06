@@ -21,6 +21,8 @@ date
 ./gradlew -Pq clean build --stacktrace
 
 # Run all Python tests
+# Setting the timeout value to 1 minute ensures package fetches from PyPI do not
+# fail on Apache Jenkins.
 ./pants build --timeout=60 src/test/python:all -vxs
 
 # Run Python style checks
