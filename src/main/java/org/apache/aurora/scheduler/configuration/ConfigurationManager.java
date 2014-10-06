@@ -58,7 +58,6 @@ public final class ConfigurationManager {
   public static final String DEDICATED_ATTRIBUTE = "dedicated";
 
   @VisibleForTesting public static final String HOST_CONSTRAINT = "host";
-  @VisibleForTesting public static final String RACK_CONSTRAINT = "rack";
 
   private static final Pattern GOOD_IDENTIFIER = Pattern.compile(GOOD_IDENTIFIER_PATTERN_JVM);
 
@@ -136,18 +135,6 @@ public final class ConfigurationManager {
             public void execute(TaskConfig task) {
               if (!Iterables.any(task.getConstraints(), hasName(HOST_CONSTRAINT))) {
                 task.addToConstraints(hostLimitConstraint(1));
-              }
-            }
-          },
-          new Closure<TaskConfig>() {
-            @Override
-            public void execute(TaskConfig task) {
-              if (!isDedicated(ITaskConfig.build(task))
-                  && task.isProduction()
-                  && task.isIsService()
-                  && !Iterables.any(task.getConstraints(), hasName(RACK_CONSTRAINT))) {
-
-                task.addToConstraints(rackLimitConstraint(1));
               }
             }
           });
@@ -356,11 +343,6 @@ public final class ConfigurationManager {
   @VisibleForTesting
   public static Constraint hostLimitConstraint(int limit) {
     return new Constraint(HOST_CONSTRAINT, TaskConstraint.limit(new LimitConstraint(limit)));
-  }
-
-  @VisibleForTesting
-  public static Constraint rackLimitConstraint(int limit) {
-    return new Constraint(RACK_CONSTRAINT, TaskConstraint.limit(new LimitConstraint(limit)));
   }
 
   private static Predicate<Constraint> hasName(final String name) {

@@ -32,7 +32,6 @@ import static java.util.Objects.requireNonNull;
 
 import static org.apache.aurora.scheduler.configuration.ConfigurationManager.DEDICATED_ATTRIBUTE;
 import static org.apache.aurora.scheduler.configuration.ConfigurationManager.HOST_CONSTRAINT;
-import static org.apache.aurora.scheduler.configuration.ConfigurationManager.RACK_CONSTRAINT;
 import static org.apache.mesos.Protos.Value.Type.RANGES;
 import static org.apache.mesos.Protos.Value.Type.SCALAR;
 
@@ -46,17 +45,17 @@ public class ClusterSimulatorModule extends AbstractModule {
     bind(FakeSlaves.class).in(Singleton.class);
     Multibinder<Offer> offers = Multibinder.newSetBinder(binder(), Offer.class);
     offers.addBinding()
-        .toInstance(baseOffer("slave-1", "a", 16, 16 * 1024, 100 * 1024));
+        .toInstance(baseOffer("slave-1", 16, 16 * 1024, 100 * 1024));
     offers.addBinding()
-        .toInstance(baseOffer("slave-2", "a", 16, 16 * 1024, 100 * 1024));
+        .toInstance(baseOffer("slave-2", 16, 16 * 1024, 100 * 1024));
     offers.addBinding()
-        .toInstance(baseOffer("slave-3", "b", 16, 16 * 1024, 100 * 1024));
+        .toInstance(baseOffer("slave-3", 16, 16 * 1024, 100 * 1024));
     offers.addBinding()
-        .toInstance(baseOffer("slave-4", "b", 16, 16 * 1024, 100 * 1024));
+        .toInstance(baseOffer("slave-4", 16, 16 * 1024, 100 * 1024));
     offers.addBinding()
-        .toInstance(dedicated(baseOffer("slave-5", "c", 24, 128 * 1024, 1824 * 1024), "database"));
+        .toInstance(dedicated(baseOffer("slave-5", 24, 128 * 1024, 1824 * 1024), "database"));
     offers.addBinding()
-        .toInstance(dedicated(baseOffer("slave-6", "c", 24, 128 * 1024, 1824 * 1024), "database"));
+        .toInstance(dedicated(baseOffer("slave-6", 24, 128 * 1024, 1824 * 1024), "database"));
     LifecycleModule.bindStartupAction(binder(), Register.class);
   }
 
@@ -78,7 +77,6 @@ public class ClusterSimulatorModule extends AbstractModule {
 
   private static Offer baseOffer(
       String slaveId,
-      String rack,
       double cpu,
       double ramMb,
       double diskMb) {
@@ -99,9 +97,6 @@ public class ClusterSimulatorModule extends AbstractModule {
         .addAttributes(Protos.Attribute.newBuilder().setType(Protos.Value.Type.TEXT)
             .setName(HOST_CONSTRAINT)
             .setText(Protos.Value.Text.newBuilder().setValue(host)))
-        .addAttributes(Protos.Attribute.newBuilder().setType(Protos.Value.Type.TEXT)
-            .setName(RACK_CONSTRAINT)
-            .setText(Protos.Value.Text.newBuilder().setValue(rack)))
         .setSlaveId(Protos.SlaveID.newBuilder().setValue(slaveId))
         .setHostname(host)
         .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("frameworkId").build())
