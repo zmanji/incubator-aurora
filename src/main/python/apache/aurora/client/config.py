@@ -22,10 +22,8 @@ import math
 import re
 import sys
 
-from pystachio import Empty
-
 from apache.aurora.client import binding_helper
-from apache.aurora.client.base import deprecation_warning, die
+from apache.aurora.client.base import die
 from apache.aurora.config import AuroraConfig
 
 from gen.apache.aurora.api.constants import DEFAULT_ENVIRONMENT
