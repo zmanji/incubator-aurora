@@ -26,30 +26,6 @@ class MesosContext(Struct):
   instance    = Required(Integer)
 
 
-# The object bound into the {{packer}} namespace.
-# Referenced by
-#  {{packer[role][name][version]}}
-#
-# Where version =
-#    number (integer)
-#    'live' (live package)
-#    'latest' (highest version number)
-#
-# For example if you'd like to create a copy process for a particular
-# package,
-#   copy_latest = Process(
-#     name = 'copy-{{package_name}}',
-#     cmdline = '{{packer[{{role}}][{{package_name}}][latest].copy_command}}')
-#   processes = [
-#     copy_latest.bind(package_name = 'labrat'),
-#     copy_latest.bind(package_name = 'packer')
-#   ]
-class PackerObject(Struct):
-  package = String
-  package_uri = String
-  copy_command = String
-
-
 class UpdateConfig(Struct):
   batch_size                  = Default(Integer, 1)
   restart_threshold           = Default(Integer, 60)
