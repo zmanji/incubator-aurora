@@ -86,8 +86,6 @@ def _validate_environment_name(config):
 UPDATE_CONFIG_MAX_FAILURES_ERROR = '''
 max_total_failures in update_config must be lesser than the job size.
 Based on your job size (%s) you should use max_total_failures <= %s.
-
-See http://go/auroraconfig for details.
 '''
 
 
@@ -95,8 +93,6 @@ UPDATE_CONFIG_DEDICATED_THRESHOLD_ERROR = '''
 Since this is a dedicated job, you must set your max_total_failures in
 your update configuration to no less than 2%% of your job size.
 Based on your job size (%s) you should use max_total_failures >= %s.
-
-See http://go/auroraconfig for details.
 '''
 
 
@@ -136,8 +132,6 @@ def _validate_update_config(config):
 HEALTH_CHECK_INTERVAL_SECS_ERROR = '''
 health_check_interval_secs paramater to Job has been deprecated. Please specify health_check_config
 only.
-
-See http://go/auroraconfig/#Aurora%2BThermosConfigurationReference-HealthCheckConfig
 '''
 
 
