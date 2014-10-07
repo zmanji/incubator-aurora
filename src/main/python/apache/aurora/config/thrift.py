@@ -94,13 +94,6 @@ def task_instance_from_job(job, instance):
   return ti.bind(mesos=instance_context).interpolate()
 
 
-def translate_cron_policy(policy):
-  cron_policy = CronCollisionPolicy._NAMES_TO_VALUES.get(policy.get())
-  if cron_policy is None:
-    raise InvalidConfig('Invalid cron policy: %s' % policy.get())
-  return cron_policy
-
-
 def fully_interpolated(pystachio_object, coerce_fn=lambda i: i):
   # Extract a fully-interpolated unwrapped object from pystachio_object or raise InvalidConfig.
   #
@@ -116,15 +109,14 @@ def fully_interpolated(pystachio_object, coerce_fn=lambda i: i):
   return coerce_fn(value.get())
 
 
-def select_cron_policy(cron_policy, cron_collision_policy):
-  if cron_policy is Empty and cron_collision_policy is Empty:
+def select_cron_policy(cron_policy):
+  if cron_policy is Empty:
     return CronCollisionPolicy.KILL_EXISTING
-  elif cron_policy is not Empty and cron_collision_policy is Empty:
-    return translate_cron_policy(cron_policy)
-  elif cron_policy is Empty and cron_collision_policy is not Empty:
-    return translate_cron_policy(cron_collision_policy)
   else:
-    raise InvalidConfig('Specified both cron_policy and cron_collision_policy!')
+    policy = CronCollisionPolicy._NAMES_TO_VALUES.get(cron_policy.get())
+    if policy is None:
+      raise InvalidConfig('Invalid cron policy: %s' % cron_policy.get())
+    return policy
 
 
 def select_service_bit(job):
@@ -138,7 +130,7 @@ def select_service_bit(job):
     raise InvalidConfig('Specified both daemon and service bits!')
 
 
-# TODO(wickman) Due to MESOS-2718 we should revert to using the MesosTaskInstance.
+# TODO(wickman): We should revert to using the MesosTaskInstance.
 #
 # Using the MesosJob instead of the MesosTaskInstance was to allow for
 # planned future use of fields such as 'cluster' and to allow for conversion
@@ -147,10 +139,7 @@ def select_service_bit(job):
 #
 # In the meantime, we are erasing fields of the Job that are controversial.
 # This achieves roughly the same effect as using the MesosTaskInstance.
-# The future work is tracked at MESOS-2727.
 ALIASED_FIELDS = (
-  'cron_policy',
-  'cron_collision_policy',
   'update_config',
   'daemon',
   'service',
@@ -256,6 +245,6 @@ def convert(job, metadata=frozenset(), ports=frozenset()):
       key=key,
       owner=owner,
       cronSchedule=not_empty_or(job.cron_schedule(), None),
-      cronCollisionPolicy=select_cron_policy(job.cron_policy(), job.cron_collision_policy()),
+      cronCollisionPolicy=select_cron_policy(job.cron_collision_policy()),
       taskConfig=task,
       instanceCount=fully_interpolated(job.instances()))

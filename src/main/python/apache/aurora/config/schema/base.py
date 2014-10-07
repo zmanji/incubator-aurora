@@ -104,10 +104,8 @@ class MesosJob(Struct):
   announce      = Announcer
 
   cron_schedule = String
-  cron_policy   = String          # these two are aliases of each other.  default is KILL_EXISTING
-  cron_collision_policy = String  # if unspecified.
-                                  # cron_policy is DEPRECATED (MESOS-2491) in favor of
-                                  # cron_collision_policy.
+  # The default is KILL_EXISTING if unspecified.
+  cron_collision_policy = String
 
   update_config = Default(UpdateConfig, UpdateConfig())
 

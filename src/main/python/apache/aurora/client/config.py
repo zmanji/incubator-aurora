@@ -31,17 +31,6 @@ from apache.aurora.config import AuroraConfig
 from gen.apache.aurora.api.constants import DEFAULT_ENVIRONMENT
 
 
-CRON_DEPRECATION_WARNING = """
-The "cron_policy" parameter to Jobs has been renamed to "cron_collision_policy".
-Please update your Jobs accordingly.
-"""
-
-
-def _warn_on_deprecated_cron_policy(config):
-  if config.raw().cron_policy() is not Empty:
-    deprecation_warning(CRON_DEPRECATION_WARNING)
-
-
 DAEMON_DEPRECATION_WARNING = """
 The "daemon" parameter to Jobs is deprecated in favor of the "service" parameter.
 Please update your Job to set "service = True" instead of "daemon = True", or use
@@ -190,7 +179,6 @@ def validate_config(config, env=None):
 
 def populate_namespaces(config, env=None):
   _inject_default_environment(config)
-  _warn_on_deprecated_cron_policy(config)
   _warn_on_deprecated_daemon_job(config)
   _warn_on_deprecated_health_check_interval_secs(config)
   return config

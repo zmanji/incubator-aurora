@@ -71,7 +71,7 @@ def test_config_with_options():
     production=True,
     priority=200,
     service=True,
-    cron_policy='RUN_OVERLAP',
+    cron_collision_policy='RUN_OVERLAP',
     constraints={
       'dedicated': 'root',
       'cpu': 'x86_64'
@@ -166,7 +166,7 @@ def test_unbound_references():
     convert_pystachio_to_thrift(job_command('echo {{mesos.user}}'))
 
 
-def test_cron_policy_alias():
+def test_cron_collision_policy():
   cron_schedule = '*/10 * * * *'
   CRON_HELLO_WORLD = HELLO_WORLD(cron_schedule=cron_schedule)
 
@@ -174,17 +174,9 @@ def test_cron_policy_alias():
   assert tti.cronSchedule == cron_schedule
   assert tti.cronCollisionPolicy == CronCollisionPolicy.KILL_EXISTING
 
-  tti = convert_pystachio_to_thrift(CRON_HELLO_WORLD(cron_policy='RUN_OVERLAP'))
-  assert tti.cronSchedule == cron_schedule
-  assert tti.cronCollisionPolicy == CronCollisionPolicy.RUN_OVERLAP
-
   tti = convert_pystachio_to_thrift(CRON_HELLO_WORLD(cron_collision_policy='RUN_OVERLAP'))
   assert tti.cronSchedule == cron_schedule
   assert tti.cronCollisionPolicy == CronCollisionPolicy.RUN_OVERLAP
-
-  with pytest.raises(ValueError):
-    tti = convert_pystachio_to_thrift(CRON_HELLO_WORLD(cron_policy='RUN_OVERLAP',
-                                                       cron_collision_policy='RUN_OVERLAP'))
 
   with pytest.raises(ValueError):
     tti = convert_pystachio_to_thrift(CRON_HELLO_WORLD(cron_collision_policy='GARBAGE'))
