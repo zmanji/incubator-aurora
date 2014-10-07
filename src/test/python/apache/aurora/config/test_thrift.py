@@ -20,7 +20,7 @@ from pystachio import Map, String
 from pystachio.naming import frozendict
 
 from apache.aurora.config import AuroraConfig
-from apache.aurora.config.schema.base import Job, SimpleTask
+from apache.aurora.config.schema.base import Job, SimpleTask, HealthCheckConfig
 from apache.aurora.config.thrift import convert as convert_pystachio_to_thrift
 from apache.aurora.config.thrift import InvalidConfig, task_instance_from_job
 from apache.thermos.config.schema import Process, Resources, Task
@@ -194,7 +194,7 @@ def test_metadata_in_config():
 
 
 def test_task_instance_from_job():
-  instance = task_instance_from_job(Job(health_check_interval_secs=30), 0)
+  instance = task_instance_from_job(Job(health_check_config=HealthCheckConfig(interval_secs=30)), 0)
   assert instance is not None
 
 

@@ -76,15 +76,12 @@ def constraints_to_thrift(constraints):
 
 def task_instance_from_job(job, instance):
   instance_context = MesosContext(instance=instance)
-  # TODO(Sathya): Remove health_check_interval_secs references after deprecation cycle is complete.
   health_check_config = HealthCheckConfig()
-  if job.has_health_check_interval_secs():
-    health_check_config = HealthCheckConfig(interval_secs=job.health_check_interval_secs().get())
-  elif job.has_health_check_config():
+  if job.has_health_check_config():
     health_check_config = job.health_check_config()
+
   ti = MesosTaskInstance(task=job.task(),
                          role=job.role(),
-                         health_check_interval_secs=health_check_config.interval_secs().get(),
                          health_check_config=health_check_config,
                          instance=instance)
   if job.has_announce():

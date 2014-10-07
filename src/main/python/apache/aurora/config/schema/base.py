@@ -88,7 +88,6 @@ class MesosTaskInstance(Struct):
   role                       = Required(String)
   announce                   = Announcer
   environment                = Default(String, DEFAULT_ENVIRONMENT)
-  health_check_interval_secs = Default(Integer, 10) # DEPRECATED (MESOS-2649)
   health_check_config        = Default(HealthCheckConfig, HealthCheckConfig())
 
 
@@ -113,7 +112,6 @@ class MesosJob(Struct):
   max_task_failures          = Default(Integer, 1)
   production                 = Default(Boolean, False)
   priority                   = Default(Integer, 0)
-  health_check_interval_secs = Integer # DEPRECATED in favor of health_check_config (MESOS-2649).
   health_check_config        = Default(HealthCheckConfig, HealthCheckConfig())
   task_links                 = Map(String, String)
 

@@ -31,21 +31,6 @@ from apache.aurora.config import AuroraConfig
 from gen.apache.aurora.api.constants import DEFAULT_ENVIRONMENT
 
 
-HEALTH_CHECK_INTERVAL_SECS_DEPRECATION_WARNING = """
-The "health_check_interval_secs" parameter to Jobs is deprecated in favor of the
-"health_check_config" parameter. Please update your Job to set the parameter by creating a new
-HealthCheckConfig.
-
-See the HealthCheckConfig section of the Configuration Reference page for more information:
-http://go/auroraconfig/#Aurora%2BThermosConfigurationReference-HealthCheckConfig
-"""
-
-
-def _warn_on_deprecated_health_check_interval_secs(config):
-  if config.raw().health_check_interval_secs() is not Empty:
-    deprecation_warning(HEALTH_CHECK_INTERVAL_SECS_DEPRECATION_WARNING)
-
-
 ANNOUNCE_WARNING = """
 Announcer specified primary port as '%(primary_port)s' but no processes have bound that port.
 If you would like to utilize this port, you should listen on {{thermos.ports[%(primary_port)s]}}
@@ -129,18 +114,6 @@ def _validate_update_config(config):
         (watch_secs, target_watch, initial_interval_secs, max_consecutive_failures, interval_secs))
 
 
-HEALTH_CHECK_INTERVAL_SECS_ERROR = '''
-health_check_interval_secs paramater to Job has been deprecated. Please specify health_check_config
-only.
-'''
-
-
-def _validate_health_check_config(config):
-  # TODO(Sathya): Remove this check after health_check_interval_secs deprecation cycle is complete.
-  if config.raw().has_health_check_interval_secs() and config.raw().has_health_check_config():
-    die(HEALTH_CHECK_INTERVAL_SECS_ERROR)
-
-
 DEFAULT_ENVIRONMENT_WARNING = '''
 Job did not specify environment, auto-populating to "%s".
 '''
@@ -153,7 +126,6 @@ def _inject_default_environment(config):
 
 
 def validate_config(config, env=None):
-  _validate_health_check_config(config)
   _validate_update_config(config)
   _validate_announce_configuration(config)
   _validate_environment_name(config)
@@ -161,7 +133,6 @@ def validate_config(config, env=None):
 
 def populate_namespaces(config, env=None):
   _inject_default_environment(config)
-  _warn_on_deprecated_health_check_interval_secs(config)
   return config
 
 
