@@ -20,7 +20,7 @@ from pystachio import Map, String
 from pystachio.naming import frozendict
 
 from apache.aurora.config import AuroraConfig
-from apache.aurora.config.schema.base import Job, SimpleTask, HealthCheckConfig
+from apache.aurora.config.schema.base import HealthCheckConfig, Job, SimpleTask
 from apache.aurora.config.thrift import convert as convert_pystachio_to_thrift
 from apache.aurora.config.thrift import InvalidConfig, task_instance_from_job
 from apache.thermos.config.schema import Process, Resources, Task
