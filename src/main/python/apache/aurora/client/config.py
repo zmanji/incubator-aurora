@@ -31,18 +31,6 @@ from apache.aurora.config import AuroraConfig
 from gen.apache.aurora.api.constants import DEFAULT_ENVIRONMENT
 
 
-DAEMON_DEPRECATION_WARNING = """
-The "daemon" parameter to Jobs is deprecated in favor of the "service" parameter.
-Please update your Job to set "service = True" instead of "daemon = True", or use
-the top-level Service() instead of Job().
-"""
-
-
-def _warn_on_deprecated_daemon_job(config):
-  if config.raw().daemon() is not Empty:
-    deprecation_warning(DAEMON_DEPRECATION_WARNING)
-
-
 HEALTH_CHECK_INTERVAL_SECS_DEPRECATION_WARNING = """
 The "health_check_interval_secs" parameter to Jobs is deprecated in favor of the
 "health_check_config" parameter. Please update your Job to set the parameter by creating a new
@@ -179,7 +167,6 @@ def validate_config(config, env=None):
 
 def populate_namespaces(config, env=None):
   _inject_default_environment(config)
-  _warn_on_deprecated_daemon_job(config)
   _warn_on_deprecated_health_check_interval_secs(config)
   return config
 

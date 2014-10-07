@@ -120,14 +120,10 @@ def select_cron_policy(cron_policy):
 
 
 def select_service_bit(job):
-  if not job.has_daemon() and not job.has_service():
+  if not job.has_service():
     return False
-  elif job.has_daemon() and not job.has_service():
-    return fully_interpolated(job.daemon(), bool)
-  elif not job.has_daemon() and job.has_service():
-    return fully_interpolated(job.service(), bool)
   else:
-    raise InvalidConfig('Specified both daemon and service bits!')
+    return fully_interpolated(job.service(), bool)
 
 
 # TODO(wickman): We should revert to using the MesosTaskInstance.
@@ -141,8 +137,6 @@ def select_service_bit(job):
 # This achieves roughly the same effect as using the MesosTaskInstance.
 ALIASED_FIELDS = (
   'update_config',
-  'daemon',
-  'service',
   'instances'
 )
 

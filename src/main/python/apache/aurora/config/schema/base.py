@@ -104,15 +104,12 @@ class MesosJob(Struct):
   announce      = Announcer
 
   cron_schedule = String
-  # The default is KILL_EXISTING if unspecified.
-  cron_collision_policy = String
+  cron_collision_policy = Default(String, "KILL_EXISTING")
 
   update_config = Default(UpdateConfig, UpdateConfig())
 
   constraints                = Map(String, String)
-  daemon                     = Boolean  # daemon and service are aliased together.
-  service                    = Boolean  # daemon is DEPRECATED (MESOS-2492) in favor of
-                                        # service.  by default, service is False.
+  service                    = Default(Boolean, False)
   max_task_failures          = Default(Integer, 1)
   production                 = Default(Boolean, False)
   priority                   = Default(Integer, 0)
