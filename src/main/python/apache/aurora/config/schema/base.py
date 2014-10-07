@@ -99,7 +99,6 @@ class MesosJob(Struct):
   environment   = Required(String)
   instances     = Default(Integer, 1)
   task          = Required(Task)
-  recipes       = List(String)
   announce      = Announcer
 
   cron_schedule = String
