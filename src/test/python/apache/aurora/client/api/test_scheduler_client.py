@@ -30,7 +30,7 @@ from apache.aurora.common.transport import TRequestsTransport
 
 import gen.apache.aurora.api.AuroraAdmin as AuroraAdmin
 import gen.apache.aurora.api.AuroraSchedulerManager as AuroraSchedulerManager
-from gen.apache.aurora.api.constants import CURRENT_API_VERSION, DEFAULT_ENVIRONMENT
+from gen.apache.aurora.api.constants import CURRENT_API_VERSION
 from gen.apache.aurora.api.ttypes import (
     Hosts,
     JobConfiguration,
@@ -51,7 +51,8 @@ from gen.apache.aurora.api.ttypes import (
 
 ROLE = 'foorole'
 JOB_NAME = 'barjobname'
-JOB_KEY = JobKey(role=ROLE, environment=DEFAULT_ENVIRONMENT, name=JOB_NAME)
+JOB_ENV = 'devel'
+JOB_KEY = JobKey(role=ROLE, environment=JOB_ENV, name=JOB_NAME)
 
 
 def test_coverage():

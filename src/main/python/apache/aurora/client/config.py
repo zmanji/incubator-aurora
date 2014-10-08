@@ -26,8 +26,6 @@ from apache.aurora.client import binding_helper
 from apache.aurora.client.base import die
 from apache.aurora.config import AuroraConfig
 
-from gen.apache.aurora.api.constants import DEFAULT_ENVIRONMENT
-
 
 ANNOUNCE_WARNING = """
 Announcer specified primary port as '%(primary_port)s' but no processes have bound that port.
@@ -112,26 +110,10 @@ def _validate_update_config(config):
         (watch_secs, target_watch, initial_interval_secs, max_consecutive_failures, interval_secs))
 
 
-DEFAULT_ENVIRONMENT_WARNING = '''
-Job did not specify environment, auto-populating to "%s".
-'''
-
-
-def _inject_default_environment(config):
-  if not config.raw().has_environment():
-    print(DEFAULT_ENVIRONMENT_WARNING % DEFAULT_ENVIRONMENT, file=sys.stderr)
-    config.update_job(config.raw()(environment=DEFAULT_ENVIRONMENT))
-
-
 def validate_config(config, env=None):
   _validate_update_config(config)
   _validate_announce_configuration(config)
   _validate_environment_name(config)
-
-
-def populate_namespaces(config, env=None):
-  _inject_default_environment(config)
-  return config
 
 
 class GlobalHookRegistry(object):
@@ -178,7 +160,6 @@ class AnnotatedAuroraConfig(AuroraConfig):
   def plugins(cls):
     return (inject_hooks,
             functools.partial(binding_helper.apply_all),
-            functools.partial(populate_namespaces),
             validate_config)
 
 

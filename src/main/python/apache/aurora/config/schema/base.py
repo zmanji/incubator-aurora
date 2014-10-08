@@ -17,8 +17,6 @@
 
 from apache.thermos.config.schema import *
 
-from gen.apache.aurora.api.constants import DEFAULT_ENVIRONMENT
-
 
 # TODO(wickman) Bind {{mesos.instance}} to %shard_id%
 class MesosContext(Struct):
@@ -63,7 +61,7 @@ class MesosTaskInstance(Struct):
   instance                   = Required(Integer)
   role                       = Required(String)
   announce                   = Announcer
-  environment                = Default(String, DEFAULT_ENVIRONMENT)
+  environment                = Required(String)
   health_check_config        = Default(HealthCheckConfig, HealthCheckConfig())
 
 
