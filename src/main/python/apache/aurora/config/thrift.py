@@ -114,10 +114,7 @@ def select_cron_policy(cron_policy):
 
 
 def select_service_bit(job):
-  if not job.has_service():
-    return False
-  else:
-    return fully_interpolated(job.service(), bool)
+  return fully_interpolated(job.service(), bool)
 
 
 # TODO(wickman): We should revert to using the MesosTaskInstance.
