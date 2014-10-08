@@ -107,13 +107,10 @@ def fully_interpolated(pystachio_object, coerce_fn=lambda i: i):
 
 
 def select_cron_policy(cron_policy):
-  if cron_policy is Empty:
-    return CronCollisionPolicy.KILL_EXISTING
-  else:
-    policy = CronCollisionPolicy._NAMES_TO_VALUES.get(cron_policy.get())
-    if policy is None:
-      raise InvalidConfig('Invalid cron policy: %s' % cron_policy.get())
-    return policy
+  policy = CronCollisionPolicy._NAMES_TO_VALUES.get(cron_policy.get())
+  if policy is None:
+    raise InvalidConfig('Invalid cron policy: %s' % cron_policy.get())
+  return policy
 
 
 def select_service_bit(job):
