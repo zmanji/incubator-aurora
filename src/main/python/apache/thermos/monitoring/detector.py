@@ -21,8 +21,41 @@ This module contains the TaskDetector, used to detect Thermos tasks within a giv
 import glob
 import os
 import re
+from abc import abstractmethod
+
+from twitter.common.lang import Interface
 
 from apache.thermos.common.path import TaskPath
+
+
+class PathDetector(Interface):
+  @abstractmethod
+  def get_paths(self):
+    """Get a list of valid checkpoint roots."""
+
+
+class FixedPathDetector(PathDetector):
+  def __init__(self, path=TaskPath.DEFAULT_CHECKPOINT_ROOT):
+    self._paths = [path]
+
+  def get_paths(self):
+    return self._paths[:]
+
+
+class ChainedPathDetector(PathDetector):
+  def __init__(self, *detectors):
+    for detector in detectors:
+      if not isinstance(detector, PathDetector):
+        raise TypeError('Expected detector %r to be a PathDetector, got %s' % (
+            detector, type(detector)))
+    self._detectors = detectors
+
+  def get_paths(self):
+    def iterate():
+      for detector in self._detectors:
+        for path in detector.get_paths():
+          yield path
+    return list(set(iterate()))
 
 
 class TaskDetector(object):
