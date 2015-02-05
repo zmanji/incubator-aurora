@@ -65,16 +65,8 @@ class TaskDetector(object):
   """
   class MatchingError(Exception): pass
 
-  def __init__(self, path_detector=None, root=None):
-    self._path_detector = path_detector
-
-    if root:
-      self._path_detector = FixedPathDetector(root)
-
-    elif (not isinstance(path_detector, PathDetector)):
-      raise TypeError('Expected path_detector %r to be a PathDetector, got %s' % (
-        path_detector, type(path_detector)))
-
+  def __init__(self, root):
+    self._path_detector = FixedPathDetector(root)
     self._pathspec = TaskPath()
 
   def get_task_ids(self, state=None):
