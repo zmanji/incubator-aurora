@@ -65,74 +65,90 @@ class TaskDetector(object):
   """
   class MatchingError(Exception): pass
 
-  def __init__(self, root):
-    self._root_dir = root
+  def __init__(self, path_detector=None, root=None):
+    self._path_detector = path_detector
+
+    if root:
+      self._path_detector = FixedPathDetector(root)
+
+    elif (not isinstance(path_detector, PathDetector)):
+      raise TypeError('Expected path_detector %r to be a PathDetector, got %s' % (
+        path_detector, type(path_detector)))
+
     self._pathspec = TaskPath()
 
   def get_task_ids(self, state=None):
-    paths = glob.glob(self._pathspec.given(root=self._root_dir,
-                                           task_id="*",
-                                           state=state or '*')
-                                    .getpath('task_path'))
-    path_re = re.compile(self._pathspec.given(root=re.escape(self._root_dir),
-                                              task_id="(\S+)",
-                                              state='(\S+)')
-                                       .getpath('task_path'))
-    for path in paths:
-      try:
-        task_state, task_id = path_re.match(path).groups()
-      except Exception:
-        continue
-      if state is None or task_state == state:
-        yield (task_state, task_id)
+    for root_dir in self._path_detector.get_paths():
+
+      paths = glob.glob(self._pathspec.given(root=root_dir,
+                                             task_id="*",
+                                             state=state or '*')
+                                      .getpath('task_path'))
+      path_re = re.compile(self._pathspec.given(root=re.escape(root_dir),
+                                                task_id="(\S+)",
+                                                state='(\S+)')
+                                         .getpath('task_path'))
+      for path in paths:
+        try:
+          task_state, task_id = path_re.match(path).groups()
+        except Exception:
+          continue
+        if state is None or task_state == state:
+          yield (task_state, task_id)
 
   def get_process_runs(self, task_id, log_dir):
-    paths = glob.glob(self._pathspec.given(root=self._root_dir,
-                                           task_id=task_id,
-                                           log_dir=log_dir,
-                                           process='*',
-                                           run='*')
-                                    .getpath('process_logdir'))
-    path_re = re.compile(self._pathspec.given(root=re.escape(self._root_dir),
-                                              task_id=re.escape(task_id),
-                                              log_dir=log_dir,
-                                              process='(\S+)',
-                                              run='(\d+)')
-                                       .getpath('process_logdir'))
-    for path in paths:
-      try:
-        process, run = path_re.match(path).groups()
-      except Exception:
-        continue
-      yield process, int(run)
+    for root_dir in self._path_detector.get_paths():
+      paths = glob.glob(self._pathspec.given(root=root_dir,
+                                             task_id=task_id,
+                                             log_dir=log_dir,
+                                             process='*',
+                                             run='*')
+                                      .getpath('process_logdir'))
+      path_re = re.compile(self._pathspec.given(root=re.escape(root_dir),
+                                                task_id=re.escape(task_id),
+                                                log_dir=log_dir,
+                                                process='(\S+)',
+                                                run='(\d+)')
+                                         .getpath('process_logdir'))
+      for path in paths:
+        try:
+          process, run = path_re.match(path).groups()
+        except Exception:
+          continue
+        yield process, int(run)
 
   def get_process_logs(self, task_id, log_dir):
-    for process, run in self.get_process_runs(task_id, log_dir):
-      for logtype in ('stdout', 'stderr'):
-        path = (self._pathspec.with_filename(logtype).given(root=self._root_dir,
-                                                           task_id=task_id,
-                                                           log_dir=log_dir,
-                                                           process=process,
-                                                           run=run)
-                                                     .getpath('process_logdir'))
-        if os.path.exists(path):
-          yield path
+    for root_dir in self._path_detector.get_paths():
+      for process, run in self.get_process_runs(task_id, log_dir):
+        for logtype in ('stdout', 'stderr'):
+          path = (self._pathspec.with_filename(logtype).given(root=root_dir,
+                                                             task_id=task_id,
+                                                             log_dir=log_dir,
+                                                             process=process,
+                                                             run=run)
+                                                       .getpath('process_logdir'))
+          if os.path.exists(path):
+            yield path
 
   def get_checkpoint(self, task_id):
-    return self._pathspec.given(root=self._root_dir, task_id=task_id).getpath('runner_checkpoint')
+    for root_dir in self._path_detector.get_paths():
+      path = self._pathspec.given(root=root_dir, task_id=task_id).getpath('runner_checkpoint')
+      if os.path.exists(path):
+        return path
 
   def get_process_checkpoints(self, task_id):
-    matching_paths = glob.glob(self._pathspec.given(root=self._root_dir,
-                                                    task_id=task_id,
-                                                    process='*')
-                                             .getpath('process_checkpoint'))
-    path_re = re.compile(self._pathspec.given(root=re.escape(self._root_dir),
-                                              task_id=re.escape(task_id),
-                                              process='(\S+)')
-                                       .getpath('process_checkpoint'))
-    for path in matching_paths:
-      try:
-        process, = path_re.match(path).groups()
-      except Exception:
-        continue
-      yield path
+    for root_dir in self._path_detector.get_paths():
+      matching_paths = glob.glob(self._pathspec.given(root=root_dir,
+                                                      task_id=task_id,
+                                                      process='*')
+                                               .getpath('process_checkpoint'))
+      path_re = re.compile(self._pathspec.given(root=re.escape(root_dir),
+                                                task_id=re.escape(task_id),
+                                                process='(\S+)')
+                                         .getpath('process_checkpoint'))
+      for path in matching_paths:
+        try:
+          process, = path_re.match(path).groups()
+        except Exception:
+          continue
+        yield path
