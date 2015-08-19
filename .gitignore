@@ -10,6 +10,8 @@
 /.pants.*
 /.vagrant/*
 /api/dist/*
+/commons/dist/*
+/commons-args/dist/*
 /atlassian-ide-plugin.xml
 /build/*
 /build-support/*.pex
