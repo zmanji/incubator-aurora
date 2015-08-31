@@ -344,9 +344,7 @@ dependencies {
   compile "com.sun.jersey:jersey-json:${jerseyRev}"
   compile "com.sun.jersey:jersey-server:${jerseyRev}"
   compile "com.sun.jersey:jersey-servlet:${jerseyRev}"
-  compile("com.sun.jersey.contribs:jersey-guice:${jerseyRev}") {
-    exclude group: 'com.google.inject.extensions'
-  }
+  compile "com.sun.jersey.contribs:jersey-guice:${jerseyRev}"
   compile 'javax.inject:javax.inject:1'
   compile "javax.servlet:servlet-api:${servletRev}"
   compile "log4j:log4j:${log4jRev}"
