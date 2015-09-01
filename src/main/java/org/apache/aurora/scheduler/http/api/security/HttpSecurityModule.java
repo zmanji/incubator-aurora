@@ -137,10 +137,10 @@ public class HttpSecurityModule extends ServletModule {
     }
   }
 
-  @Provides
-  public Collection<Realm> provideRealmCollection(Set<Realm> realms) {
-    return realms;
-  }
+//  @Provides
+//  public Collection<Realm> provideRealmCollection(Set<Realm> realms) {
+//    return realms;
+//  }
 
   private void doConfigureServlets() {
     bind(Subject.class).toProvider(SecurityUtils::getSubject).in(RequestScoped.class);
