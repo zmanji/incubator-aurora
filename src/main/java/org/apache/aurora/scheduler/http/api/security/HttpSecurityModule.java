@@ -14,7 +14,6 @@
 package org.apache.aurora.scheduler.http.api.security;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,7 +43,6 @@ import org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdmin;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.guice.aop.ShiroAopModule;
 import org.apache.shiro.guice.web.ShiroWebModule;
-import org.apache.shiro.realm.Realm;
 import org.apache.shiro.subject.Subject;
 
 import static java.util.Objects.requireNonNull;
@@ -136,11 +134,6 @@ public class HttpSecurityModule extends ServletModule {
       doConfigureServlets();
     }
   }
-
-//  @Provides
-//  public Collection<Realm> provideRealmCollection(Set<Realm> realms) {
-//    return realms;
-//  }
 
   private void doConfigureServlets() {
     bind(Subject.class).toProvider(SecurityUtils::getSubject).in(RequestScoped.class);
