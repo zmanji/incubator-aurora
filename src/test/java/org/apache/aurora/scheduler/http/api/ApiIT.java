@@ -20,6 +20,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import com.google.common.primitives.Bytes;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -29,13 +31,18 @@ import com.sun.jersey.api.client.ClientResponse;
 import org.apache.aurora.gen.Response;
 import org.apache.aurora.scheduler.http.AbstractJettyTest;
 import org.apache.aurora.scheduler.thrift.aop.AnnotatedAuroraAdmin;
+import org.apache.thrift.protocol.TJSONProtocol;
 import org.junit.Before;
 import org.junit.Test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_MODIFIED;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE;
 import static javax.ws.rs.core.HttpHeaders.CONTENT_TYPE;
 
+import static javax.ws.rs.core.HttpHeaders.ETAG;
+import static javax.ws.rs.core.HttpHeaders.IF_NONE_MATCH;
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 
@@ -129,5 +136,80 @@ public class ApiIT extends AbstractJettyTest {
     assertEquals(
         "application/vnd.apache.thrift.binary",
         response.getHeaders().getFirst(CONTENT_TYPE));
+  }
+
+  @Test
+  public void testETagOnResponse() throws Exception {
+    expect(thrift.getRoleSummary()).andReturn(new Response());
+    String exepectedResult = "[1,\"getRoleSummary\",2,0,{\"0\":{\"rec\":{}}}]";
+    String expectedEtag = Long.toString(Hashing.goodFastHash(64).hashBytes(exepectedResult.getBytes(UTF_8)).asLong());
+    expectedEtag = "\"" + expectedEtag + "\"";
+
+    replayAndStart();
+
+    ClientResponse response = getPlainRequestBuilder(ApiModule.API_PATH)
+        .type("application/vnd.apache.thrift.json")
+        .accept("application/vnd.apache.thrift.json")
+        .post(ClientResponse.class, JSON_FIXTURE);
+
+    assertEquals(exepectedResult, response.getEntity(String.class));
+    assertEquals(SC_OK, response.getStatus());
+    assertEquals(expectedEtag, response.getHeaders().getFirst(ETAG));
+  }
+
+  @Test
+  public void testAcceptIfNoneMatchHeader() throws Exception {
+    expect(thrift.getRoleSummary()).andReturn(new Response());
+    expect(thrift.getRoleSummary()).andReturn(new Response());
+
+    replayAndStart();
+
+    ClientResponse response = getPlainRequestBuilder(ApiModule.API_PATH)
+        .type("application/vnd.apache.thrift.json")
+        .accept("application/vnd.apache.thrift.json")
+        .post(ClientResponse.class, JSON_FIXTURE);
+    assertEquals(SC_OK, response.getStatus());
+
+    String etag = response.getHeaders().getFirst(ETAG);
+
+    response = getPlainRequestBuilder(ApiModule.API_PATH)
+        .type("application/vnd.apache.thrift.json")
+        .accept("application/vnd.apache.thrift.json")
+        .header(IF_NONE_MATCH, etag)
+        .post(ClientResponse.class, JSON_FIXTURE);
+
+    assertEquals(SC_NOT_MODIFIED, response.getStatus());
+    assertEquals(etag, response.getHeaders().getFirst(ETAG));
+  }
+
+  @Test
+  public void testAcceptIfNoneMatchHeaderWithGzip() throws Exception {
+    // The Gzip handler in jetty modifies etag and if-none-match headers
+
+    expect(thrift.getRoleSummary()).andReturn(new Response());
+    expect(thrift.getRoleSummary()).andReturn(new Response());
+
+    replayAndStart();
+
+    ClientResponse response = getPlainRequestBuilder(ApiModule.API_PATH)
+        .type("application/vnd.apache.thrift.json")
+        .accept("application/vnd.apache.thrift.json")
+        .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
+        .post(ClientResponse.class, JSON_FIXTURE);
+    assertEquals(SC_OK, response.getStatus());
+
+    String etag = response.getHeaders().getFirst(ETAG);
+
+    response = getPlainRequestBuilder(ApiModule.API_PATH)
+        .type("application/vnd.apache.thrift.json")
+        .accept("application/vnd.apache.thrift.json")
+        .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
+        .header(IF_NONE_MATCH, etag)
+        .post(ClientResponse.class, JSON_FIXTURE);
+
+    assertEquals(SC_NOT_MODIFIED, response.getStatus());
+    assertEquals(etag, response.getHeaders().getFirst(ETAG));
+
+
   }
 }

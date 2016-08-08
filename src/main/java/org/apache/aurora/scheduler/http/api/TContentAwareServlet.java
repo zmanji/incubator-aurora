@@ -13,6 +13,7 @@
  */
 package org.apache.aurora.scheduler.http.api;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -24,6 +25,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TProtocol;
@@ -34,6 +37,8 @@ import org.apache.thrift.transport.TTransport;
 import static java.util.Objects.requireNonNull;
 
 import static javax.ws.rs.core.HttpHeaders.ACCEPT;
+import static javax.ws.rs.core.HttpHeaders.ETAG;
+import static javax.ws.rs.core.HttpHeaders.IF_NONE_MATCH;
 
 /**
  * An implementation of {@link org.apache.thrift.server.TServlet} that can handle multiple thrift
@@ -129,8 +134,10 @@ public class TContentAwareServlet extends HttpServlet {
       return;
     }
 
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
     TTransport transport =
-        new TIOStreamTransport(request.getInputStream(), response.getOutputStream());
+        new TIOStreamTransport(request.getInputStream(), outputStream);
 
     TProtocol inputProtocol = factoryOptional.get().getProtocol(transport);
 
@@ -152,7 +159,17 @@ public class TContentAwareServlet extends HttpServlet {
     TProtocol outputProtocol = outputProtocolFactory.getProtocol(transport);
     try {
       processor.process(inputProtocol, outputProtocol);
-      response.getOutputStream().flush();
+      HashCode hash = Hashing.goodFastHash(64).hashBytes(outputStream.toByteArray());
+      String hashStr = "\"" + Long.toString(hash.asLong()) + "\"";
+      response.setHeader(ETAG, hashStr);
+
+      if (hashStr.equals(request.getHeader(IF_NONE_MATCH))) {
+        response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+      } else {
+        outputStream.writeTo(response.getOutputStream());
+        response.getOutputStream().flush();
+      }
+
     } catch (TException e) {
       throw new ServletException(e);
     }
