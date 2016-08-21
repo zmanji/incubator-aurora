@@ -192,7 +192,7 @@ public class Stats {
    * @return A reference back to {@code var}, or the variable that was already registered under the
    *    same name as {@code var}.
    */
-  public static Stat<String> exportString(Stat<String> var) {
+  static Stat<String> exportString(Stat<String> var) {
     return exportStatic(var);
   }
 
@@ -201,7 +201,7 @@ public class Stats {
    *
    * @param vars The variables to add.
    */
-  public static void exportAll(Iterable<Stat<? extends Number>> vars) {
+  static void exportAll(Iterable<Stat<? extends Number>> vars) {
     for (Stat<? extends Number> var : vars) {
       export(var);
     }
@@ -214,7 +214,7 @@ public class Stats {
    * @param intVar The variable to export.
    * @return A reference to the {@link AtomicInteger} provided.
    */
-  public static AtomicInteger export(final String name, final AtomicInteger intVar) {
+  private static AtomicInteger export(final String name, final AtomicInteger intVar) {
     export(new SampledStat<Integer>(name, 0) {
       @Override public Integer doSample() { return intVar.get(); }
     });
@@ -229,18 +229,7 @@ public class Stats {
    * @return A reference to the {@link AtomicInteger} created.
    */
   public static AtomicInteger exportInt(String name) {
-    return exportInt(name, 0);
-  }
-
-  /**
-   * Creates and exports an {@link AtomicInteger} with initial value.
-   *
-   * @param name The name to export the stat with.
-   * @param initialValue The initial stat value.
-   * @return A reference to the {@link AtomicInteger} created.
-   */
-  public static AtomicInteger exportInt(String name, int initialValue) {
-    return export(name, new AtomicInteger(initialValue));
+    return export(name, new AtomicInteger(0));
   }
 
   /**
@@ -250,7 +239,7 @@ public class Stats {
    * @param longVar The variable to export.
    * @return A reference to the {@link AtomicLong} provided.
    */
-  public static AtomicLong export(String name, final AtomicLong longVar) {
+  private static AtomicLong export(String name, final AtomicLong longVar) {
     export(new StatImpl<Long>(name) {
       @Override public Long read() { return longVar.get(); }
     });
@@ -265,33 +254,7 @@ public class Stats {
    * @return A reference to the {@link AtomicLong} created.
    */
   public static AtomicLong exportLong(String name) {
-    return exportLong(name, 0L);
-  }
-
-  /**
-   * Creates and exports an {@link AtomicLong} with initial value.
-   *
-   * @param name The name to export the stat with.
-   * @param initialValue The initial stat value.
-   * @return A reference to the {@link AtomicLong} created.
-   */
-  public static AtomicLong exportLong(String name, long initialValue) {
-    return export(name, new AtomicLong(initialValue));
-  }
-
-  /**
-   * Exports an {@link AtomicDouble}, which will be included in time series tracking.
-   *
-   * @param name The name to export the stat with.
-   * @param doubleVar The variable to export.
-   * @return A reference to the {@link AtomicDouble} provided.
-   */
-  public static AtomicDouble export(String name, final AtomicDouble doubleVar) {
-    export(new StatImpl<Double>(name) {
-      @Override public Double read() { return doubleVar.doubleValue(); }
-    });
-
-    return doubleVar;
+    return export(name, new AtomicLong(0L));
   }
 
   /**
@@ -314,7 +277,7 @@ public class Stats {
    * @param var Variable to statically export.
    * @return A reference back to the provided {@link Stat}.
    */
-  public static <T> Stat<T> exportStatic(Stat<T> var) {
+  static <T> Stat<T> exportStatic(Stat<T> var) {
     String validatedName = validateName(MorePreconditions.checkNotBlank(var.getName()));
     exportStaticInternal(validatedName, var);
     return var;
@@ -346,6 +309,7 @@ public class Stats {
     NUMERIC_STATS.invalidateAll();
   }
 
+  @VisibleForTesting
   public static <T> Stat<T> getVariable(String name) {
     MorePreconditions.checkNotBlank(name);
     @SuppressWarnings("unchecked")
