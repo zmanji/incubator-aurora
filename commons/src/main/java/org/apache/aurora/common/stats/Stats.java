@@ -29,7 +29,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MapMaker;
-import com.google.common.util.concurrent.AtomicDouble;
 
 import org.apache.aurora.common.base.MorePreconditions;
 import org.slf4j.Logger;
@@ -208,43 +207,18 @@ public class Stats {
   }
 
   /**
-   * Exports an {@link AtomicInteger}, which will be included in time series tracking.
-   *
-   * @param name The name to export the stat with.
-   * @param intVar The variable to export.
-   * @return A reference to the {@link AtomicInteger} provided.
-   */
-  private static AtomicInteger export(final String name, final AtomicInteger intVar) {
-    export(new SampledStat<Integer>(name, 0) {
-      @Override public Integer doSample() { return intVar.get(); }
-    });
-
-    return intVar;
-  }
-
-  /**
    * Creates and exports an {@link AtomicInteger}.
    *
    * @param name The name to export the stat with.
    * @return A reference to the {@link AtomicInteger} created.
    */
-  public static AtomicInteger exportInt(String name) {
-    return export(name, new AtomicInteger(0));
-  }
-
-  /**
-   * Exports an {@link AtomicLong}, which will be included in time series tracking.
-   *
-   * @param name The name to export the stat with.
-   * @param longVar The variable to export.
-   * @return A reference to the {@link AtomicLong} provided.
-   */
-  private static AtomicLong export(String name, final AtomicLong longVar) {
-    export(new StatImpl<Long>(name) {
-      @Override public Long read() { return longVar.get(); }
+  public static AtomicInteger exportInt(final String name) {
+    final AtomicInteger intVar = new AtomicInteger(0);
+    export(new SampledStat<Integer>(name, 0) {
+      @Override public Integer doSample() { return intVar.get(); }
     });
 
-    return longVar;
+    return intVar;
   }
 
   /**
@@ -254,7 +228,12 @@ public class Stats {
    * @return A reference to the {@link AtomicLong} created.
    */
   public static AtomicLong exportLong(String name) {
-    return export(name, new AtomicLong(0L));
+    final AtomicLong longVar = new AtomicLong(0L);
+    export(new StatImpl<Long>(name) {
+      @Override public Long read() { return longVar.get(); }
+    });
+
+    return longVar;
   }
 
   /**
