@@ -13,12 +13,10 @@
  */
 package org.apache.aurora.scheduler.events;
 
-import java.util.Map;
-
 import com.google.common.base.MoreObjects;
-
 import com.google.common.collect.ImmutableMap;
-
+import java.net.URL;
+import java.util.Map;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -30,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 public class WebhookInfo {
   private final Integer connectTimeout;
   private final Map<String, String> headers;
-  private final String targetURL;
+  private final URL targetURL;
 
   /**
    * Return key:value pairs of headers to set for every connection.
@@ -46,7 +44,7 @@ public class WebhookInfo {
    *
    * @return String
    */
-  public String getTargetURL() {
+  public URL getTargetURL() {
     return this.targetURL;
   }
 
@@ -67,7 +65,7 @@ public class WebhookInfo {
 
     requireNonNull(targetURL);
     this.headers = ImmutableMap.copyOf(headers);
-    this.targetURL = requireNonNull(targetURL);
+    this.targetURL = requireNonNull(new URL(targetURL));
     this.connectTimeout = requireNonNull(timeout);
   }
 

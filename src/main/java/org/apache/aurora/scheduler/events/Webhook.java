@@ -13,18 +13,17 @@
  */
 package org.apache.aurora.scheduler.events;
 
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.time.Instant;
-
 import com.google.common.eventbus.Subscribe;
-
 import com.google.inject.Inject;
-
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.apache.aurora.scheduler.events.PubsubEvent.EventSubscriber;
 import org.apache.aurora.scheduler.events.PubsubEvent.TaskStateChange;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,64 +34,24 @@ public class Webhook implements EventSubscriber {
 
   private static final Logger LOG = LoggerFactory.getLogger(Webhook.class);
 
-  private static final String CALL_METHOD = "POST";
-  private final WebhookInfo webhookInfo;
+  private HttpClient client;
+  private WebhookInfo info;
 
   @Inject
-  Webhook(WebhookInfo webhookInfo) {
-    this.webhookInfo = webhookInfo;
-    LOG.debug("Webhook enabled with info" + this.webhookInfo);
+  Webhook(HttpClient client, WebhookInfo info) {
+    this.client = client;
+    this.info = info;
   }
 
-  private HttpURLConnection initializeConnection() {
-    try {
-      final HttpURLConnection connection = (HttpURLConnection) new URL(
-          this.webhookInfo.getTargetURL()).openConnection();
-      connection.setRequestMethod(CALL_METHOD);
-      connection.setConnectTimeout(this.webhookInfo.getConnectonTimeout());
+  private HttpPost createPostRequest(TaskStateChange stateChange) throws URISyntaxException, UnsupportedEncodingException {
+    String eventJson = stateChange.toJson();
 
-      webhookInfo.getHeaders().entrySet().forEach(
-          e -> connection.setRequestProperty(e.getKey(), e.getValue()));
-      connection.setRequestProperty("TimeStamp", Long.toString(Instant.now().toEpochMilli()));
-      connection.setDoOutput(true);
-      return connection;
-    } catch (Exception e) {
-      // Do nothing since we are just doing best-effort here.
-      LOG.error("Exception trying to initialize a connection:", e);
-      return null;
-    }
-  }
+    HttpPost post = new HttpPost();
+    post.setURI(new URI(info.getTargetURL()));
+    post.setHeader("Timestamp", "124");
+    post.setEntity(new StringEntity(eventJson));
 
-  /**
-   * Calls a specified endpoint with the provided string representing an internal event.
-   *
-   * @param eventJson String represenation of task state change.
-   */
-  public void callEndpoint(String eventJson) {
-    HttpURLConnection connection = this.initializeConnection();
-    if (connection == null) {
-      LOG.error("Received a null object when trying to initialize an HTTP connection");
-    } else {
-      try {
-        try (DataOutputStream wr = new DataOutputStream(connection.getOutputStream())) {
-          wr.writeBytes(eventJson);
-          LOG.debug("Sending message " + eventJson
-              + " with connection info " + connection.toString()
-              + " with WebhookInfo " + this.webhookInfo.toString());
-        } catch (Exception e) {
-          InputStream errorStream = connection.getErrorStream();
-          if (errorStream != null) {
-            errorStream.close();
-          }
-          LOG.error("Exception writing via HTTP connection", e);
-        }
-        // Don't care about reading input so just performing basic close() operation.
-        connection.getInputStream().close();
-      } catch (Exception e) {
-        LOG.error("Exception when sending a task change event", e);
-      }
-    }
-    LOG.debug("Done with Webhook call");
+    return post;
   }
 
   /**
@@ -104,7 +63,15 @@ public class Webhook implements EventSubscriber {
    */
   @Subscribe
   public void taskChangedState(TaskStateChange stateChange) {
-    String eventJson = stateChange.toJson();
-    callEndpoint(eventJson);
+    HttpPost post = createPostRequest(stateChange);
+    try {
+      client.execute(post);
+    } catch (IOException e) {
+      // Log this.
+    } catch (URISyntaxException e) {
+      // Log this
+    } finally {
+      post.reset();
+    }
   }
 }
