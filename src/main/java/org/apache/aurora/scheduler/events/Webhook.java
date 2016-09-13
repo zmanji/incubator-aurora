@@ -49,7 +49,7 @@ public class Webhook implements EventSubscriber {
     HttpPost post = new HttpPost();
     post.setURI(new URI(info.getTargetURL()));
     post.setHeader("Timestamp", "124");
-    post.setEntity(new StringEntity(eventJson));
+    post.setEntity(new StringEntity(eventJson, "application/json"));
 
     return post;
   }
